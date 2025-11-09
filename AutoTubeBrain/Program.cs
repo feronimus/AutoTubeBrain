@@ -3,6 +3,7 @@ using Application.Contracts;
 using AutoTubeBrain;
 using Domain;
 using Infrastructure;
+using Infrastructure.ImageGen;
 using Infrastructure.Storage;
 using Infrastructure.TextGen;
 using Infrastructure.Tts;
@@ -28,6 +29,7 @@ builder.Services.AddMassTransit(x =>
     x.SetKebabCaseEndpointNameFormatter();
     x.AddConsumer<EpisodePlanRequestedConsumer>();
     x.AddConsumer<EpisodeTtsRequestedConsumer>();
+    x.AddConsumer<EpisodeImagesRequestedConsumer>();
 
     x.UsingRabbitMq((ctx, cfg) =>
     {
@@ -55,6 +57,10 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(t => t.ForJob(ttsKey).WithIdentity("tts-kick-trigger")
         .StartNow().WithSimpleSchedule(s => s.WithIntervalInSeconds(10).RepeatForever()));
 
+    var imagesKey = new JobKey("images-kick");
+    q.AddJob<ImagesKickJob>(opts => opts.WithIdentity(imagesKey));
+    q.AddTrigger(t => t.ForJob(imagesKey).WithIdentity("images-kick-trigger")
+        .StartNow().WithSimpleSchedule(s => s.WithIntervalInSeconds(10).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService();
 
@@ -76,7 +82,7 @@ else if (string.Equals(ttsProvider, "OpenAI", StringComparison.OrdinalIgnoreCase
 //    builder.Services.AddSingleton<ITts, DummyTts>(); // optional simple stub if you want one
 
 builder.Services.AddSingleton<IStorage, MinioStorage>();
-
+builder.Services.AddSingleton<IImageGen, DummyImageGen>();
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
     var endpoint = builder.Configuration["MINIO:Endpoint"]

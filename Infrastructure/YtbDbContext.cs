@@ -1,5 +1,6 @@
 ﻿using Domain;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace Infrastructure;
 
@@ -9,6 +10,7 @@ public sealed class YtbDbContext : DbContext
 
     public DbSet<Episode> Episodes => Set<Episode>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+    public DbSet<Asset> Assets => Set<Asset>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -29,6 +31,14 @@ public sealed class YtbDbContext : DbContext
             e.Property(x => x.Type).HasMaxLength(128).IsRequired();
             e.Property(x => x.Payload).HasColumnType("jsonb").IsRequired();
             e.HasIndex(x => new { x.Dispatched, x.Id });
+        });
+
+        b.Entity<Asset>(b =>
+        {
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Kind).HasConversion<string>().HasMaxLength(16);
+            b.Property(a => a.Path).HasMaxLength(512);
+            b.HasIndex(a => new { a.EpisodeId, a.Kind });
         });
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

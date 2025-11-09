@@ -84,6 +84,7 @@ public sealed class EpisodeTtsRequestedConsumer(
         ep.Status = EpisodeStatus.TtsReady;
         ep.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ctx.CancellationToken);
+        await ctx.Publish(new EpisodeImagesRequested(ep.Id), ctx.CancellationToken);
 
         log.LogInformation("TTS ready for {EpisodeId}", id);
     }
