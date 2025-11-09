@@ -1,0 +1,10 @@
+Rebuild
+
+docker compose stop worker
+docker compose build --no-cache worker
+docker compose up -d worker
+docker compose logs -f worker
+
+Get into postgres container:
+docker exec -it autotubebrain-db-1 psql -U postgres -d ytb
+select * from "Episodes" limit 10;
